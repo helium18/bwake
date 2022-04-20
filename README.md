@@ -17,7 +17,7 @@ When the battery charges to the limit specified, the device is woken up and an a
 ## Install instructions (?)
 ```
 git clone https://github.com/helium18/bwake.git
-cd bwake`
+cd bwake
 chmod +x bwake
 ```
 
