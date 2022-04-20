@@ -1,0 +1,104 @@
+#!/bin/bash
+
+BAT=`ls /sys/class/power_supply | grep BAT | head -n 1`
+thresh=80
+
+status() {
+    status=$(cat /sys/class/power_supply/${BAT}/status)
+
+    echo "${status}"
+}
+
+current_capacity() {
+    bat_per=$(cat /sys/class/power_supply/${BAT}/capacity)
+
+    echo "${bat_per}"
+}
+
+bat_to_charge() {
+    current_capacity=`current_capacity`
+    left=$(echo "${thresh}-${current_capacity}" | bc -l)    
+
+    echo "${left}"
+}
+
+time_to_full() {
+    energy=$(cat /sys/class/power_supply/$BAT/energy_now)
+    power=$(cat /sys/class/power_supply/$BAT/power_now)
+
+    # Time = Energy / Power
+    time=$(echo "${energy}/${power}" | bc -l)
+
+    echo "$time"
+}
+
+time_to_thresh() {
+    time_to_full=`time_to_full`    
+    cur_bat=`current_capacity`
+    bat_to_charge=`bat_to_charge`
+    bat_to_full=$(echo "100 - ${cur_bat}" | bc -l)
+    bat_thresh=$thresh
+    time_to_thresh=$(echo "( ${time_to_full} * ${bat_to_charge} ) / ${bat_to_full}" | bc -l)
+    
+    echo "${time_to_thresh}"
+}
+
+sleep_pc() {
+    hrs=`time_to_thresh`
+    secs_float=$(echo "${hrs} * 60 * 60" | bc -l)
+    secs=$(awk "BEGIN{print int(${secs_float} - (${secs_float} % 1))}")
+
+    echo -e "ℹ️ Estimated time to ${thresh} = ${secs}s.\nℹ️ Going to sleep in 5s\n"
+    sleep 5
+
+    sudo rtcwake -m mem -s $secs
+    main
+}
+
+alarm() {
+    path=$HOME/sound.ogg
+    echo -e "🟢 Playing ${path}"
+
+    while : 
+    do 
+        paplay $path
+        sleep 5
+    done
+}
+
+main() {
+    status=`status`
+    curr_cap=`current_capacity`
+    
+    if [[ "$status" == "Discharging" ]] ; then
+        echo -e "🔴 Run the script only when the adapter is plugged in\nExiting"
+
+    elif [[ $curr_cap -ge $thresh ]] ; then
+        echo -e "🟢 Charged! Plug out the adapter\n"
+        alarm
+
+    else 
+        echo -e "ℹ️ It's recommended to close all apps so that an accurate time estimate can be made\n"
+        echo -e "ℹ️ Waiting for 10s to close all apps\n"
+        sleep 15 # Sleeping for 15 to bring the PC to normal in the 5 extra secs
+        sleep_pc
+
+    fi
+}
+
+
+if [[ "$1" == "-h" || "$1" == "--help" ]] ; then
+    echo "Tool to remind you to plug out the charger after putting your device to sleep
+
+    Options:
+        -t | --thresh : Battery threshold [Default: 80]"
+
+    exit
+    
+
+elif [[ "$1" == "-t" || "$1" == "--thresh" ]] ; then 
+    thresh=$2
+
+fi
+
+main $thresh
