@@ -14,6 +14,15 @@ Then puts your device to sleep (it uses `rtcwake` behind the scenes).
 
 When the battery charges to the limit specified, the device is woken up and an alarm is played.
 
+## Install instructions (?)
+```
+git clone https://github.com/helium18/bwake.git
+cd bwake`
+chmod +x bwake
+```
+
+Copy the script to some desired location. Preferably somewhere in the `$PATH`
+
 ## Things to note
 1. It's just an estimate, there's a 90% chance that it'll go above / below the threshold a bit ~ 5%-10%.
 2. Consider running the script with `sudo`. (To avoid entering the password manually every time before the device is slept)
