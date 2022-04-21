@@ -24,7 +24,7 @@ chmod +x bwake
 Copy the script to some desired location. Preferably somewhere in the `$PATH`
 
 ## Things to note
-1. It's just an estimate, there's a 90% chance that it'll go above / below the threshold a bit ~ 5%-10%.
+1. It's just an estimate, there's a high chance that it'll go above / below the threshold a bit ~ 5%-10%. This can be controlled by setting the `precision` flag.
 2. Consider running the script with `sudo`. (To avoid entering the password manually every time before the device is slept)
 3. The alarm should be named `sound.ogg` and be placed in `$HOME`. An option to override this behavior will be provided in the future 
 
