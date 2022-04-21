@@ -2,6 +2,7 @@
 
 BAT=`ls /sys/class/power_supply | grep BAT | head -n 1`
 thresh=80
+precision=1
 
 status() {
     status=$(cat /sys/class/power_supply/${BAT}/status)
@@ -46,7 +47,7 @@ time_to_thresh() {
 sleep_pc() {
     hrs=`time_to_thresh`
     secs_float=$(echo "${hrs} * 60 * 60" | bc -l)
-    secs=$(awk "BEGIN{print int(${secs_float} - (${secs_float} % 1))}")
+    secs=$(awk "BEGIN{print int((${secs_float} - (${secs_float} % 1)) / ${precision})}") # Remove decimal place from secs and divide by precision
 
     echo -e "ℹ️ Estimated time to ${thresh} = ${secs}s.\nℹ️ Going to sleep in 5s\n"
     sleep 5
@@ -87,18 +88,38 @@ main() {
 }
 
 
-if [[ "$1" == "-h" || "$1" == "--help" ]] ; then
+help() {
     echo "Tool to remind you to plug out the charger after putting your device to sleep
 
     Options:
-        -t | --thresh : Battery threshold [Default: 80]"
+        -t | --thresh : Battery threshold [Default: 80]
+        -p | --precision : The precision for calculating the time. More precision = more wake ups from sleep but the deviation from the threshold will be lesser. [Default: 1]"
 
     exit
-    
+}
+   
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -p|--precision)
+        precision="$2"
+        shift # past argument
+        shift # past value
+        ;;
+    -t|--thresh)
+        thresh="$2"
+        shift # past argument
+        shift # past value
+        ;;
+    -h|--help)
+        help
+        exit 0
+        ;;
+    -*|--*)
+        echo -e "🔴 Unexpected argument $1\nℹ️ Run with -h | --help flag for instructions to use the program"
+        exit 1
+        ;;
+  esac
+done
 
-elif [[ "$1" == "-t" || "$1" == "--thresh" ]] ; then 
-    thresh=$2
-
-fi
 
 main $thresh
